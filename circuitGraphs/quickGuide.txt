@@ -1,0 +1,34 @@
+The following are where information can be found in the SFQ integrated circuit design textbook.
+
+----------3.5.2-Adiabatic Quantum Flux Parametron-------------
+While not exactly one-to-one (I have no clue what the D stands for)
+- ex_pi_DQFP_buffer_chan
+- ex_pi_DQFP_inverter_chain
+
+----------4.1.1-Josephson-Transmission-Lines------------------
+-ex_dcsfq_jtl_sink
+-ex_jtl_param_times
+-ex_jtl_basic
+-ex_jtl_string
+
+----------4.2.1-D-Flip-Flop----------------------------------
+-ex_mitll_dff_wr
+
+----------4.2.2-Buffer----------------------------------------
+-ex_pi_DQFP_buffer_chan
+
+----------4.2.6-Inverter-------------------------------------
+-ex_pi_DQFP_inverter_chain
+
+----------4.2.8-DC-to-SFQ convertors--------------------------
+Only this part of the chapter looks to be covered
+-ex_dcsfq_jtl_sink
+
+---------5.1.2-Hybrid-clocking-approaches---------------------
+-ex_ksa4bit
+The above looks to be a 4 bit adder.
+
+---------12.3.3-Partial-path-balancing------------------------
+Have not gotten here. I can only assume what pp stands for
+-ex_gen_pp_ipht
+The graphs do not look exactly correct however.
