@@ -106,14 +106,28 @@ class LinearModified(Module):
 
     
 
-
+#TODO fan in
 class Adder(nn.Module):
     def __init__():
         super(Adder,self).__init__()
     def forward(X):
         output = X[0]
         for i in range(1,len(X)):
-        
+            output+=X[i]
+        return output
+
+#TODO fan out
+class Propo(nn.Module):
+    def __init__():
+        super(Adder,self).__init__()
+    def forward(X,outFeatures):
+        output = []
+        for i in range(outFeatures):
+            output.append(X)
+        return X
+
+#TODO graphChecker
+
 
 class Net(nn.Module):
     def __init__():
@@ -122,8 +136,8 @@ class Net(nn.Module):
         self.neuro1 - nn.Sigmoid()
         self.fanIn = 
         self.fanOut = 
-        self.syn2 = snn.Synaptic()
+        self.syn2 = nn.Synaptic()
         self.neuro2 = nn.Sigmoid()
-        self.syn3 - snn.Synaptic()
+        self.syn3 - nn.Synaptic()
         self.neuro3 = nn.Sigmoid()
 
