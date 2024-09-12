@@ -6,18 +6,22 @@ import snntorch as snn
 from snntorch import spikeplot as splt
 from snntorch import spikegen
 import itertools
+from torch import Tensor
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 from torch.nn import functional as F, init
-testData = torch.tensor([[1,1],[1,0],[0,1],[0,0]])
-testResults = torch.tensor([0,1,1,0])
+import math
 
-inputsize = 2
-outputsize = 1
+
+testData = torch.tensor([[1,1],[1,0],[0,1],[0,0]]).to(torch.float)
+testResults = torch.tensor([0,1,1,0]).to(torch.float)
+
+inFeatures = 2
+outFeatures = 1
 
 #stolen code from torch.nn.........add a limiter to forward
 #https://github.com/pytorch/pytorch/blob/main/torch/nn/modules/linear.py#L50
-class LinearModified(Module):
+class ModifiedLinear(nn.Module):
     r"""Applies an affine linear transformation to the incoming data: :math:`y = xA^T + b`.
 
     This module supports :ref:`TensorFloat32<tf32_on_ampere>`.
@@ -64,8 +68,8 @@ class LinearModified(Module):
         self,
         in_features: int,
         out_features: int,
-        minimum: float = None.
-        maximum: float = None,
+        minimum = None,
+        maximum = None,
         bias: bool = True,
         device=None,
         dtype=None,
@@ -78,11 +82,11 @@ class LinearModified(Module):
             self.min = minimum
         if maximum:
             self.max = maximum
-        self.weight = Parameter(
+        self.weight = nn.Parameter(
             torch.empty((out_features, in_features), **factory_kwargs)
         )
         if bias:
-            self.bias = Parameter(torch.empty(out_features, **factory_kwargs))
+            self.bias = nn.Parameter(torch.empty(out_features, **factory_kwargs))
         else:
             self.register_parameter("bias", None)
         self.reset_parameters()
@@ -98,7 +102,7 @@ class LinearModified(Module):
             init.uniform_(self.bias, -bound, bound)
 
     def forward(self, input: Tensor) -> Tensor:
-        self.weight=self.weight/self.weight.clamp(min=self.min, max=self.max)
+        self.weight=nn.Parameter(self.weight/self.weight.clamp(min=self.min, max=self.max))
         return F.linear(input, self.weight, self.bias)
 
     def extra_repr(self) -> str:
@@ -108,36 +112,63 @@ class LinearModified(Module):
 
 #TODO fan in
 class Adder(nn.Module):
-    def __init__():
+    def __init__(self):
         super(Adder,self).__init__()
-    def forward(X):
+    def forward(self,X):
         output = X[0]
         for i in range(1,len(X)):
             output+=X[i]
-        return output
+        return output.unsqueeze(dim=0)
 
 #TODO fan out
 class Propo(nn.Module):
-    def __init__():
-        super(Adder,self).__init__()
-    def forward(X,outFeatures):
-        output = []
-        for i in range(outFeatures):
-            output.append(X)
-        return X
+    def __init__(self):
+        super(Propo,self).__init__()
+    def forward(self,X,outFeatures):
+        output = X.clone()
+        for i in range(outFeatures-1):
+            output = torch.cat((output,X))
+        return output
 
 #TODO graphChecker
-
+    
 
 class Net(nn.Module):
-    def __init__():
+    def __init__(self):
         super().__init__()
-        self.syn1 = nn.Linear()
-        self.neuro1 - nn.Sigmoid()
-        self.fanIn = 
-        self.fanOut = 
-        self.syn2 = nn.Synaptic()
-        self.neuro2 = nn.Sigmoid()
-        self.syn3 - nn.Synaptic()
-        self.neuro3 = nn.Sigmoid()
+        self.syn1 = ModifiedLinear(inFeatures,inFeatures, maximum=1, minimum=-1)
+        #self.neuro1 = nn.GraphCheck()
+        self.fanIn = Adder()
+        self.fanOut = Propo()
+        self.syn2 = ModifiedLinear(inFeatures,inFeatures, maximum=1, minimum=-1)
+        #self.neuro2 = nn.GraphCheck()
+        self.syn3 = ModifiedLinear(inFeatures,outFeatures, maximum=1, minimum=-1)
+        #self.neuro3 = nn.GraphCheck()
+    def forward(self,X):
+        inter = self.syn1(X)
+        #inter = self.neuro1(inter)
+        inter = self.fanIn(inter)
+        inter = self.fanOut(inter,2)
+        inter = self.syn2(inter)
+        #inter = self.neuro2(inter)
+        inter = self.syn3(inter)
+        #inter = self.neuro3(inter)
+        return inter
 
+device = torch.device("cuda") if torch.cuda.is_available() else torch.device("mps") if torch.backends.mps.is_available() else torch.device("cpu")
+
+numEpochs = 1000
+net = Net().to(device)
+loss = nn.L1Loss()
+optimizer = torch.optim.Adam(net.parameters(), lr=1e-1)
+for epoch in range(numEpochs):
+    for i in range(len(testData)):
+        data = testData[i].to(device)
+        results = testResults[i].to(device)
+        net.train()
+        iterResults = net(data)
+        loss_val = loss(iterResults, results)
+        optimizer.zero_grad()
+        loss_val.backward()
+        optimizer.step()
+        print(iterResults)
