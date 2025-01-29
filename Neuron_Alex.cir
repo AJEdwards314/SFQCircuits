@@ -1,0 +1,52 @@
+* Neuronal Circuit - Alex Design 
+
+.subckt DC_2_SFQ 1  3  
+L01	1	0	0.3p 
+L02	2	3	0.3p 
+B01	1	2	jmitll 
+B02	2	0	jmitll 
+RL1	3	0	2 
+I01	0	2	DC	150u 
+.model jmitll jj(rtype=1, vg=2.8mV, cap=0.07pF, r0=160, rN=16, icrit=0.15mA)
+.ends DC_2_SFQ
+
+# JJ's 
+B01        0          11         jmitll  
+B02        0          4          jmitll
+B03        0          5          jmitll
+
+# Current Sources
+IB0        0          11          pwl(0 0 5p 200u)
+
+# Inductors & and Mutual Inductance Parameter
+L02        11         2          5p 
+L03        5          6          5p 
+L04        3          4          60p
+K01        L04       L03        0.6   
+
+# Resistors
+R01        2          3          0.2
+R02        3          0          0.12
+R03        6          0          0.5
+R0L        4          0          2
+
+# Voltage Inputs
+VI1        5          0          DC 0 
+
+X01 DC_2_SFQ 10 11
+
+Vin	10	0   pwl({})
+#Vin        10	      0          pulse(0 450u 10p 4.5952p 4.5952p 0 40p)
+
+# Circuit Parameters
+.temp 0
+.model jmitll jj(rtype=1, vg=2.8mV, cap=0.07pF, r0=160, rN=16, icrit=0.1mA)
+# .model jmitll2 jj(rtype=1, vg=2.8mV, cap=0.07pF, r0=160, rN=16, icrit=0.1mA)
+.tran 0.005p 650p 0 0.005p 
+
+.print DEVV Vin   
+.print DEVI B02
+.print NODEV 4 0 
+.print PHASE B01
+.print PHASE B02
+.end
