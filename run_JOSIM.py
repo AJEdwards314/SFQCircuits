@@ -27,10 +27,7 @@ User Options: This allows us to choose what parameters to run from the tests
 and how we wish to plot them. For one plot alone, enter the specified test number, 
 then a 0 (ex 1 0). For parallel voltage / phase testing, enter as a pair (ex 1 2)
 Run JOSIM: Given the circuit file to run, simply exectutes JOSIM to generate results 
------------------------------------------------------------------------'''
-
-# Code is currently set to run automatically with all defaults 
-# 10 GHz max starting at 0.001 GHz with 0.05 GHz steps 
+-----------------------------------------------------------------------''' 
 
 def startup(): # Asks for user inputs 
 
@@ -39,9 +36,7 @@ def startup(): # Asks for user inputs
     global cir_file
 
     print("Run in default mode? (Y or N): ")
-    # mode = str(input())
-
-    mode = 'Y'
+    mode = str(input())
 
     if(mode == 'N'): # User curated inputs 
         print("Circuit File (.cir): ")
@@ -54,7 +49,7 @@ def startup(): # Asks for user inputs
 
     elif(mode == 'Y'): # If we perform many tests under one condition / debugging circuit
         cir_file = "conflu_neuron_v1.cir"
-        frequency =  1
+        frequency =  50
         sim_length = 10000e-12 
 
 def poisson(freq, seed, sim): # Creates the poisson distributed spike train 
@@ -107,10 +102,10 @@ def poisson(freq, seed, sim): # Creates the poisson distributed spike train
 
     return pwl # Return the resulting string to the code 
 
-def edit_circuit(cir, pwl1, pwl2, pwl3, pwl4): # Takes the needed pwl's and generates the circuit file 
+def edit_circuit(cir, pwl1, pwl2, pwl3, pwl4, pwl5, R2): # Takes the needed pwl's and generates the circuit file 
     with open(f"{cir}") as fh: 
         str = fh.read() # Read the circuit file and save 
-        str = str.format(pwl1, pwl2, pwl3, pwl4) # Make any necessary changes 
+        str = str.format(R2, pwl1, pwl2, pwl3, pwl4, pwl5) # Make any necessary changes 
         with open("SFQ_Neuron_TESTING.cir", 'w') as fh: # Write in new changes to circuit 
             fh.write(str)
 
@@ -119,33 +114,35 @@ def run_josim(): # Call JOSIM and exectute statement
 
 def create_sweep(): 
 
-    ins = [] 
+    # ins = [] 
 
-    #print("Max Freq (GHz): Min Freq(GHz): Step")
+    #print("Max Freq (GHz): Min Freq(GHz): Step: ")
 
     # for i in range(3): 
     #     ins.append(float(input())) 
 
-    # if(ins[1] == 0): # Correct thiSs term if the user sets it to 0 
-    #     ins[1] += 1 
+    #if(ins[1] == 0): # Correct thiSs term if the user sets it to 0 
+    #    ins[1] += 0.001
 
-    ins = [10, 0.001, 1]
     sweeplist = [] 
 
-    max = ins[0] 
+    #max = ins[0] 
 
-    sum = 0 
+    # sum = 0 
 
-    i = 0 
+    # i = 0 
 
-    while(sum < max):
+    # while(sum < max):
 
-        sum = ins[1] + ( i * ins[2])
+    #     sum = ins[1] + ( i * ins[2])
 
-        i += 1 
+    #     i += 1 
 
-        sweeplist.append(sum)
-
+    #     sweeplist.append(sum)
+    
+    # sweeplist  = [0.001, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56, 58, 60, 62.5, 65, 67.5, 70, 75, 80]
+    sweeplist = [0.001, 0.021, 0.041, 0.061, 0.081, 0.101, 0.121, 0.141, 0.161, 0.181, 0.201, 0.221, 0.241, 0.261, 0.281, 0.301, 0.321, 0.341, 0.361, 0.381, 0.401, 0.421, 0.441, 0.461, 0.481, 0.501, 0.521, 0.541, 0.561, 0.581, 0.601, 0.621, 0.641, 0.661, 0.681, 0.701, 0.721, 0.741, 0.761, 0.781, 0.801, 0.821, 0.841, 0.861, 0.881, 0.901, 0.921, 0.941, 0.961, 0.981, 1]
+    
     return sweeplist 
 
 def print_options(data): # Function will allow user to choose what to print 
@@ -213,7 +210,7 @@ def plot(tests, names, data): # Takes our recieved data and determines what to p
             ax2.legend()
             ax2.grid()
 
-            plt.savefig(f"{names[x]}.png") # Save under column name 
+            plt.savefig(f"{names[x]}.png".replace('|', '-')) # Save under column name 
             plt.clf()
 
 def in_out_rate(data, points): 
@@ -230,20 +227,21 @@ def in_out_rate(data, points):
     return xplot, yplot 
 
 def test_plot(plot1, plot2, title, mode): # Function will plot other kinds of data (Sweeps / ETC) 
-        
+
+
     if(mode == 1): 
 
         plt.scatter(plot1, plot2) # Plot requested data alongside each other  
         plt.title(f"{title}")
-        plt.xlabel("Sum of In")
-        plt.ylabel("Output of Confluence")
+        plt.xlabel("Given Frequencies")
+        plt.ylabel("Resulting Frequencies")
         plt.plot()
         plt.gca().set_ylim(bottom = 0)
         plt.gca().set_xlim(left = 0)
         plt.savefig(f"{title}.png") # Save under column name 
         plt.clf()
 
-    if(mode == 2): 
+    if(mode == 2):
         plt.scatter(plot1, plot2) # Plot requested data alongside each other  
         plt.title(f"{title}")
         plt.xlabel("Input Frequencies")
@@ -255,7 +253,7 @@ def test_plot(plot1, plot2, title, mode): # Function will plot other kinds of da
         plt.clf()
 
 def freq_sweep(data): # Function also performs a sweep, in a frequency respose fashion 
-    output = data['P(B02|X06)'].tolist() 
+    output = data['P(B0L|X06)'].tolist() 
     phase_max = (output[-1] / (sim_length * 1e9 * 2 * pi)) * (-1)
 
     return phase_max 
@@ -264,21 +262,22 @@ def freq_sweep(data): # Function also performs a sweep, in a frequency respose f
 
 pi = 3.14159 # value of pi to determine number of phase rotations
 
+R2_val = [0.1] # default value for R2 
+
 startup() # Get user Values 
 
-#print("Run Standard Test? (Y or N): ") # Determine the kinf of tests that are needed 
-#standard = str(input()) 
+print("Run Standard Test? (Y or N): ") # Determine the kind of tests that are needed 
+standard = str(input()) 
 
-standard = 'Y'
-
-if(standard == 'Y'): 
+if(standard == 'Y'): # Standard test for transient response 
 
     pwl1 = poisson(frequency, 0, sim_length) # Create the needed pwl(s)
     pwl2 = poisson(frequency, 1, sim_length) # Create the needed pwl(s)
     pwl3 = poisson(frequency, 2, sim_length) # Create the needed pwl(s)
     pwl4 = poisson(frequency, 3, sim_length) # Create the needed pwl(s)
+    pwl5 = poisson(50, 4, sim_length) # Create the pwl for the inhibitory input 
 
-    edit_circuit(cir_file, pwl1, pwl2, pwl3, pwl4) # Function takes all needed pwl's and file, to send to JOSIM
+    edit_circuit(cir_file, pwl1, pwl2, pwl3, pwl4, pwl5, R2_val[0]) # Function takes all needed pwl's and file, to send to JOSIM
 
     if __name__ == "__main__":  # Run JOSIM 
         run_josim()
@@ -287,50 +286,63 @@ if(standard == 'Y'):
 
     tests = print_options(data) # Get the contents of tests from the user 
 
+    print(name_row)
+
     plot(tests, name_row, data) # Finally plot outputs and determine 
 
-# print("Run in out rate test? (Y or N): ")
-# in_out_test = str(input()) # Ask for I/O test
+print("Run parameter sweep? (Y or N): ") # Determine if sweep of resistor value is needed 
+paramsweep = str(input()) 
 
-in_out_test = 'Y'
+if (paramsweep == 'N'): # In no case set value once
+    R2_val = [0.1]
 
-if (in_out_test == 'Y'):
+elif(paramsweep == 'Y'): # In yes case values sweep based on following list 
+    R2_val = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
 
-    in_out_data = ['P(B01|X05)', 'P(B03|X05)', 'P(B05|X05)', 'P(B07|X05)', 'P(B02|X06)'] # Which points to measure in sweep 
+print("Run in out rate test? (Y or N): ")
+in_out_test = str(input()) # Ask for I/O test
 
-    xplot = [] # Create list for the x points 
+print(len(R2_val))
 
-    yplot = [] # Create list for y points
+for k in range(len(R2_val)): # Sweeps the runs for all values of R2 
 
-    #for i in range(3): 
-    #    in_out_data[i] = str(input(f"Enter Point Number {i}: ")) # Get inputs for which points to measure 
+    print(k)
 
-    sweeplist = create_sweep() # Get parameters for the sweep 
+    if (in_out_test == 'Y'): # If test is accepted 
 
-    output_freq = []
+        # Set to test Confluence alone 
 
-    for i in range(len(sweeplist)): # Begin the frequency sweep 
+        in_out_data = ['P(B05|X01)', 'P(B05|X02)', 'P(B05|X03)', 'P(B05|X04)', 'P(B0L|X06)'] # Which points to measure in sweep 
 
-        pwl1 = poisson(sweeplist[i], 0, sim_length)
-        pwl2 = poisson(sweeplist[i], 1, sim_length)
-        pwl3 = poisson(sweeplist[i], 2, sim_length)
-        pwl4 = poisson(sweeplist[i], 3, sim_length)
+        xplot = [] # Create list for the x points 
 
-        edit_circuit(cir_file, pwl1, pwl2, pwl3, pwl4) 
+        yplot = [] # Create list for y points
 
-        run_josim()
+        # for i in range(3): 
+        #    in_out_data[i] = str(input(f"Enter Point Number {i}: ")) # Get inputs for which points to measure 
 
-        data = pandas.read_csv('SFQ_Neuron_TESTING/SFQ_Neuron_TESTING.csv') # Reads the generated CSV and saves
+        sweeplist = create_sweep() # Get parameters for the sweep 
 
-        # This list saves frequency sweep data 
+        output_freq = []
 
-        output_freq.append(freq_sweep(data)) 
+        for i in range(len(sweeplist)): # Begin the frequency sweep 
 
-        xplot , yplot = in_out_rate(data, in_out_data)
+            pwl1 = poisson(sweeplist[i], 0, sim_length)
+            pwl2 = poisson(sweeplist[i], 1, sim_length)
+            pwl3 = poisson(sweeplist[i], 2, sim_length)
+            pwl4 = poisson(sweeplist[i], 3, sim_length)
+            pwl5 = poisson(50, 4, sim_length) # Create the pwl for the inhibitory input 
+            
+            edit_circuit(cir_file, pwl1, pwl2, pwl3, pwl4, pwl5, R2_val[k]) 
 
-    test_plot(xplot, output_freq, "Neuron Frequency Sweep TEST1", 2) # plots the output frequency sweep
-    test_plot(xplot, sweeplist, "Input Freq Comparison", 1) 
+            run_josim()
 
+            data = pandas.read_csv('SFQ_Neuron_TESTING/SFQ_Neuron_TESTING.csv') # Reads the generated CSV and saves
 
- 
-    
+            # This list saves frequency sweep data 
+
+            output_freq.append(freq_sweep(data)) 
+
+            xplot , yplot = in_out_rate(data, in_out_data)
+        
+        test_plot(xplot, output_freq, f"Neuron Frequency Trials - LOW RANGE - (R1 = 0.5 R2 = {R2_val[k]})", 2) # plots the output frequency sweep    
