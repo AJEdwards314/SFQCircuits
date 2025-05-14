@@ -108,7 +108,7 @@ test_loader = DataLoader(mnist_test, batch_size=batch_size, shuffle=True, drop_l
 
 # Network Architecture
 num_inputs = 28*28
-num_hidden = 1000
+num_hidden = 10#00
 num_outputs = 10
 
 # Temporal Dynamics
@@ -231,38 +231,93 @@ for i in data[1:]:
 biasCurrents = [x for _, x in sorted(zip(probabilities, biasCurrents))]
 probabilities.sort()
 
+from dsplot.graph import Graph
+
 relevent=['fc1',"fc2"]
 
 synNum=786
 
+points = dict()
+
 circuit = open('testOutputs.cir',"a")
 counter = 1
 offset = 0
+voltageCounter = 0
+finalSynapseLocations = list(range(786))
 
-for i in relevent:
-    weights = state_dict[i+'.weight']
-    biases = state_dict[i+'.bias']
+for i in range(0,786):
+    circuit.write("VIN{} {} 0 pulse(0 225u 0 9.1904p 9.1904p 0 20p)\n".format(i,i))
+    points[i] = []
+
+for layer in relevent:
+    points = dict()
+    for i in finalSynapseLocations:
+        points[i] = []
+    weights = state_dict[layer+'.weight']
+    biases = state_dict[layer+'.bias']
+    layerNum = len(weights[0])
+    if len(finalSynapseLocations) != 1:
+            for i in range(0,len(finalSynapseLocations)):
+                # X{NUMBER} splitter {input} {out1} {out2}
+                for j in range(0,layerNum,2):
+                    if j == 0:
+                        circuit.write('X{} splitter {} {} {}\n'.format(counter, finalSynapseLocations[i], offset+i*layerNum+j, offset+i*layerNum+j+1))
+                        points[finalSynapseLocations[i]].append(offset+i*layerNum+j)
+                        points[finalSynapseLocations[i]].append(offset+i*layerNum+j+1)
+                        points[offset+i*layerNum+j] = []
+                        points[offset+i*layerNum+j+1] = []
+                    else:
+                        circuit.write('X{} splitter {} {} {}\n'.format(counter, offset+i*layerNum+j-1, offset+i*layerNum+j, offset+i*layerNum+j+1))
+                        points[offset+i*layerNum+j-1].append(offset+i*layerNum+j)
+                        points[offset+i*layerNum+j-1].append(offset+i*layerNum+j+1)
+                        points[offset+i*layerNum+j] = []
+                        points[offset+i*layerNum+j+1] = []
+
+                    counter+=1
+            synNum = i*layerNum+j+1
+
+
+    finalSynapseLocations = [0]
     for j in range(len(weights)):
         for k in range(len(weights[j])):
             biasCurrent = find_nearest(biasCurrents,probabilities,abs(weights[j][k]))
+            # X{NUMBER} synapse {input negative} {input positive} {output}
             if weights[j][k] > 0:
-                circuit.write("X{} synapse {} {} 0\n".format(counter, offset+j, synNum))
+                circuit.write("X{} synapse 0 {} {}\n".format(counter, offset+2*k*layerNum+2*j, synNum))
             else:
-                circuit.write("X{} synapse {} 0 {}\n".format(counter, offset+j, synNum))
+                circuit.write("X{} synapse {} 0 {}\n".format(counter, offset+k*layerNum+j, synNum))
+            points[offset+k*layerNum+j].append(synNum)
+            points[synNum] = []
             synNum+=1
             counter+=1
-        print(i,"weights written",j)
-        #treat 785 as constant power
+        print(layer,"weights written",j)
         if weights[j][k] > 0:
-            circuit.write("X{} synapse 785 {} 0\n".format(counter, synNum))
+            circuit.write("X{} synapse 0 785 {}\n".format(counter, synNum))
         else:
             circuit.write("X{} synapse 785 0 {}\n".format(counter, synNum))
+        points[synNum] = []
         synNum+=1
         counter+=1
-        addstr = "X{} Adder ".format(counter)
-        for k in range(synNum-len(weights[j])-1, synNum+1):
-            addstr+='{} '.format(k)
-        synNum+=1
-        circuit.write(addstr+'\n')
+        # X{NUMBER} adder {output} {in1} {in2}
+        for k in range(synNum-len(weights[j])-1, synNum):
+            circuit.write('X{} adder {} {} {}\n'.format(counter, synNum, k, synNum - 1))
+            points[k].append(synNum)
+            points[synNum-1].append(synNum)
+            points[synNum] = []
+            points[k].append(synNum)
+            points[synNum-1].append(synNum)
+            synNum+=1
+        finalSynapseLocations.append(synNum-1)
+        
+    
     offset = synNum
-    print(i,"done")
+    print(layer,"Layer completed. Mixing signals")
+    
+circuit.write(""".temp 4.2
+.tran 0.008 220p 0 0.008p""")
+
+for i in finalSynapseLocations[1:]:
+    circuit.write(".print NODEV {} 0\n".format(i))
+
+graph = Graph(points, directed=True)
+graph.plot(fill_color="#aec6cf")
