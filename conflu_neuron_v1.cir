@@ -1,0 +1,132 @@
+# Neuronal circuit with 4 input confluence buffer and needed DCSFQ converters 
+# Circuit uses three seperate subcircuits: 
+# DCSFQ (IO: 2 17 ) 4 DCSFQ's will alter these values 
+# Confluence (IO: 1 2 3 4 14)
+# Neuron (IO: 10 20 12)
+
+.subckt DCSFQ 2 17 
+B01        5          3          jmitll 
+B02        5          6          jmitll 
+B03        9          10         jmitll  
+B04        13         14         jmitll     
+B05        15         16         jmitll 
+IB01       0          8          pwl(0 0 5p 30u)
+IB02       0          12         pwl(0 0 5p 400u)
+L03        2          3          1p    
+L04        5          7          0.5p    
+L05        7          9          3p    
+L06        9          11         1p    
+L07        11         13         1p    
+L08        13         15         3p    
+L09        15         17         2p     
+LP01       0          6          0.1p    
+LP02       0          10         0.1p    
+LP03       0          14         0.1p    
+LP04       0          16         0.1p    
+LPR01      7          8          0.1p    
+LPR02      11         12         0.1p    
+LRB01      4          5          0.5p        
+LRB02      18         6          0.5p        
+LRB03      19         10         0.5p        
+LRB04      20         14         0.5p        
+LRB05      21         16         0.5p   
+RB03       19         9          6   
+RB04       20         13         8
+RB05       21         15         1.9
+.model jmitll jj(rtype=1, vg=2.8mV, cap=0.07pF, r0=160, rN=16, icrit=0.15mA)
+.ends DCSFQ
+
+.subckt CONFLU 1 2 3 4 14 
+B01 5 0 jmitll
+B02 5 9 jmitll area=1.5
+B03 6 0 jmitll 
+B04 6 10 jmitll area=1.5
+B05 7 0 jmitll
+B06 7 11 jmitll area=1.5
+B07 8 0 jmitll
+B08 8 12 jmitll area=1.5
+B0L 14 0 jmitll 
+L01 1 5 0.5p 
+L02 2 6 0.5p 
+L03 3 7 0.5p  
+L04 4 8 0.5p  
+L05 9 13 0.5p 
+L06 10 13 0.5p 
+L07 11 13 0.5p 
+L08 12 13 0.5p 
+LC1 13 14 2p 
+I01 0 13 pwl(0 0 5p 800u)
+.model jmitll jj(rtype=1, vg=2.8mV, cap=0.07pF, r0=160, rN=16, icrit=0.15mA)
+.ends CONFLU
+
+.subckt NEURON 11 5 4
+B01        0          11         jmitll  
+B02        0          4          jmitll
+B03        0          5          jmitll
+IB0        0          11         pwl(0 0 5p 200u)
+L02        11         2          5p 
+L03        5          6          5p 
+L04        3          4          5p
+K01        L04        L03        0.6   
+R01        2          3          0.5
+R02        3          0          0.075
+R03        6          0          0.2
+.ends NEURON
+
+# Main Circuit -------------------------------------------------------------
+
+X01 DCSFQ 1 5 
+X02 DCSFQ 2 6
+X03 DCSFQ 3 7
+X04 DCSFQ 4 8 
+X05 CONFLU 5 6 7 8 10 
+X06 NEURON 10 20 12
+
+VIN1 1 0 pwl({}) 
+VIN2 2 0 pwl({}) 
+VIN3 3 0 pwl({})
+VIN4 4 0 pwl({})
+
+VIH1 20 0 DC 0 
+
+R0L 12 0 1  
+
+# Parameters ---------------------------------------------------------------
+.temp 4.2
+.model jmitll jj(rtype=1, vg=2.8mV, cap=0.07pF, r0=160, rN=16, icrit=0.15mA)
+.tran 0.25p 10000p 0 0.25p
+
+# Voltage Inputs 
+
+.print DEVV VIN1
+.print DEVV VIN2
+.print DEVV VIN3
+.print DEVV VIN4
+
+# Current Outputs
+
+.print i(L04.X06)
+
+# Voltage Outputs 
+
+.print v(B0L.X05)
+.print DEVV R0L 
+.print v(B01.X06)
+
+# Outputs for the JJ's 
+
+.print p(B05.X01)
+.print p(B05.X02)
+.print p(B05.X03)
+.print p(B05.X04)
+
+.print p(B0L.X05)
+
+.print p(B01.X05)
+.print p(B03.X05)
+.print p(B05.X05)
+.print p(B07.X05)
+
+.print p(B02.X06)
+.end
+
