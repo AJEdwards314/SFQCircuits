@@ -62,34 +62,66 @@ X03 CONFLUSMALL 5 6 7
 .ends CONFLU
 
 
-.subckt NEURON 11 5 4
-LP  1   2   6p
-RP  2   0   0.37
-LX  3   4   11.63p
-LN  5   6   4.8p
-RN  6   0   0.37
-RDN 4   0   0.36
-RDP 3   8   0.36
-LOP 8   9   0.2p
-BJJP 8   0   jmitll
-LON 7   10  0.2p
-BJJN 7   0   jmitll
-KPX LP  LX  0.43
-KNX LN  LX  -0.59
+.subckt LIF_Neuron 1 2 3 4  5 6 7 8  106
 
-IBP 0   8   pwl(0 0 5p 90u)
-IBN 0   7   pwl(0 0 5p 70u)
+# Excitatory Branch
 
+R10 11 0 0.25
+R11 22 0 0.25
+R12 33 0 0.25
+R13 44 0 0.25
+L10 1 11 150p
+L11 2 22 150p
+L12 3 33 150p
+L13 4 44 150p
+B10 1 0 jmitll
+B11 2 0 jmitll
+B12 3 0 jmitll
+B13 4 0 jmitll
+
+# Inhibitory Branch
+
+R20 55 0 0.25
+R21 66 0 0.25
+R22 77 0 0.25
+R23 88 0 0.25
+L20 5 55 150p
+L21 6 66 150p
+L22 7 77 150p
+L23 8 88 150p
+
+# Center Branch
+
+R01 105 104 0.25
+R02 100 0   0.25
+L30 104 103 150p
+L31 103 102 150p
+L32 102 101 150p
+L33 101 100 150p
+L34 105 106 0.2p
+B01 105 0 jmitll
+
+K01 L30 L10 0.43
+K02 L31 L11 0.43
+K03 L32 L12 0.43
+K04 L33 L13 0.43
+
+K05 L30 L20 -0.43
+K06 L31 L21 -0.43
+K07 L32 L22 -0.43
+K08 L33 L23 -0.43
+
+I01 0 105 DC 150u
 
 .model jmitll jj(rtype=1, vg=2.8mV, cap=0.07pF, r0=160, rN=16, icrit=0.1mA)
-.ends NEURON
+.ends LIF_Neuron
 
-.subckt SYNAPSE 1 6 7
+
+.subckt SYNAPSE 1 6 9
 B01        7          1          jmitll
 B02        0          7          jmitll
 L01        7          9          0.1p
 L02        6          7          0.1p
-R0L        9          0          1
 .model jmitll jj(rtype=1, vg=2.8mV, cap=0.07pF, r0=160, rN=16, icrit=0.15mA)
 .ends SYNAPSE
 
@@ -130,7 +162,6 @@ LRB01      7          9          0.086p
 LRB02      8          10         0.086p
 RB01       9          3          5.23
 RB02       10         6          5.23
-ROUT       5          0          2
 .model jmod jj(rtype=1, vg=2.8mV, cap=0.07pF, r0=160, rN=16, icrit=0.15mA)
 .ends jtl
 
